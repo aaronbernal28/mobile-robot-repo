@@ -50,25 +50,26 @@ void KeysToTwist::on_key_down(const keyboard_msgs::msg::Key::SharedPtr key_event
 {
   geometry_msgs::msg::Twist twist;
 
+  const float VELOCIDAD_NORMAL = 0.2;
   switch( key_event->code )
   {
     case keyboard_msgs::msg::Key::KEY_UP:
-      twist.linear.x = 0.1;
+      twist.linear.x = VELOCIDAD_NORMAL;
       break;
 
     case keyboard_msgs::msg::Key::KEY_DOWN:
       // completar ...
-      twist.linear.x = -0.1;
+      twist.linear.x = -VELOCIDAD_NORMAL;
       break;
 
     case keyboard_msgs::msg::Key::KEY_LEFT:
       // completar ...
-      twist.angular.z = 0.1;
+      twist.angular.z = VELOCIDAD_NORMAL;
       break;
 
     case keyboard_msgs::msg::Key::KEY_RIGHT:
       // completar ...
-      twist.angular.z = -0.1;
+      twist.angular.z = -VELOCIDAD_NORMAL;
       break;
 
     default:

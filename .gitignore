@@ -51,3 +51,5 @@ qtcreator-*
 CATKIN_IGNORE
 
 *.pdf
+.vscode/settings.json
+volume/NOTES.md

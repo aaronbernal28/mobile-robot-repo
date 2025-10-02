@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
-
 from geometry_msgs.msg import Twist
+import random
 
 
 class PublisherVelocity(Node):
@@ -17,6 +17,8 @@ class PublisherVelocity(Node):
         msg = Twist()
         
         #Completar con el mensaje a enviar por el nodo "publisher_velocity"
+        msg.linear.x = 0.5 + random.uniform(-0.3, 0.3)
+        msg.angular.z = 0.5 + random.uniform(-0.3, 0.3)
 
         self.publisher_.publish(msg)
         self.get_logger().info(f'Publishing Twist: linear.x={msg.linear.x}, angular.z={msg.angular.z}')
@@ -25,7 +27,7 @@ class PublisherVelocity(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    publisher_velocity = PublisherVelocity()
+    publisher_velocity = PublisherVelocity() # inicializa el nodo
 
     rclpy.spin(publisher_velocity)
 
