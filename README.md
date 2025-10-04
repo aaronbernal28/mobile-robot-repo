@@ -54,3 +54,7 @@ cd ~/ros2_ws
 # Source the setup
 source install/setup.bash
 ```
+
+## Extra
+Open vscode within the container:
+`code --no-sandbox --user-data-dir=/path/to/some/directory .`

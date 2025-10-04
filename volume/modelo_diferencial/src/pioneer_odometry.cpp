@@ -31,8 +31,9 @@ void PioneerOdometry::on_velocity_cmd(const geometry_msgs::msg::Twist::SharedPtr
   /** Completar los mensajes de velocidad vLeft y vRight*/
   double x = twist->linear.x;
   double theta = twist-> angular.z;
-  double vLeft = (x - theta * WHEEL_BASELINE) / WHEEL_RADIUS;
-  double vRight = (x + theta * WHEEL_BASELINE) / WHEEL_RADIUS;
+  double b = WHEEL_BASELINE / 2.0;
+  double vLeft = (x - theta * b) / WHEEL_RADIUS;
+  double vRight = (x + theta * b) / WHEEL_RADIUS;
 
   // publish left velocity
   {
@@ -71,7 +72,9 @@ void PioneerOdometry::on_encoder_ticks(const robmovil_msgs::msg::EncoderTicks::S
   double d = (d_left + d_right) / 2;
 
   // calcular el desplazamiento relativo: delta_x, delta_y, delta_theta
-  double delta_theta = (d_left - d_right) / (2 * WHEEL_BASELINE);
+  double delta_theta = (d_right - d_left) / WHEEL_BASELINE;
+  theta_ += delta_theta;
+  
   double delta_x = d * std::cos(theta_);
   double delta_y = d * std::sin(theta_);
 
@@ -80,7 +83,6 @@ void PioneerOdometry::on_encoder_ticks(const robmovil_msgs::msg::EncoderTicks::S
   double delta_t = (current_time - last_ticks_time).seconds();
 
   /** Utilizar variables globales x_, y_, theta_ definidas en el .h */
-  theta_ += delta_theta;
   x_ += delta_x;
   y_ += delta_y;
 
