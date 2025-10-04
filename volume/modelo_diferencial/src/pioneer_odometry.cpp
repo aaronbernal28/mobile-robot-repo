@@ -66,16 +66,23 @@ void PioneerOdometry::on_encoder_ticks(const robmovil_msgs::msg::EncoderTicks::S
   int32_t delta_ticks_left = encoder->ticks_left.data - last_ticks_left_;
   int32_t delta_ticks_right = encoder->ticks_right.data - last_ticks_right_;
 
+  double d_left = (M_PI * 2 * WHEEL_RADIUS * delta_ticks_left) / ENCODER_TICKS;
+  double d_right = (M_PI * 2 * WHEEL_RADIUS * delta_ticks_right) / ENCODER_TICKS;
+  double d = (d_left + d_right) / 2;
+
   // calcular el desplazamiento relativo: delta_x, delta_y, delta_theta
+  double delta_theta = (d_left - d_right) / (2 * WHEEL_BASELINE);
+  double delta_x = d * std::cos(theta_);
+  double delta_y = d * std::sin(theta_);
 
   /* Utilizar este delta de tiempo entre momentos */
   rclcpp::Time current_time(encoder->header.stamp);
   double delta_t = (current_time - last_ticks_time).seconds();
 
   /** Utilizar variables globales x_, y_, theta_ definidas en el .h */
-  //x_ += ...;
-  //y_ += ...;
-  //theta_ += ...;
+  theta_ += delta_theta;
+  x_ += delta_x;
+  y_ += delta_y;
 
   // Construir el mensaje odometry utilizando el esqueleto siguiente:
   nav_msgs::msg::Odometry msg;
@@ -84,21 +91,23 @@ void PioneerOdometry::on_encoder_ticks(const robmovil_msgs::msg::EncoderTicks::S
   msg.header.frame_id = "map";
   msg.child_frame_id = "base_link";
 
-  msg.pose.pose.position.x = 0;
-  msg.pose.pose.position.y = 0;
+  // Posicion estimada respecto al origen de la simulacion
+  msg.pose.pose.position.x = x_;
+  msg.pose.pose.position.y = y_;
   msg.pose.pose.position.z = 0;
 
   tf2::Quaternion q;
-  q.setRPY(0, 0, 0);  // roll, pitch, yaw
+  q.setRPY(0, 0, theta_);  // roll, pitch, yaw
   msg.pose.pose.orientation = tf2::toMsg(q);
 
-  msg.twist.twist.linear.x = 0;
-  msg.twist.twist.linear.y = 0;
+  // Velocidades
+  msg.twist.twist.linear.x = delta_x / delta_t;
+  msg.twist.twist.linear.y = delta_y / delta_t;
   msg.twist.twist.linear.z = 0;
 
   msg.twist.twist.angular.x = 0;
   msg.twist.twist.angular.y = 0;
-  msg.twist.twist.angular.z = 0;
+  msg.twist.twist.angular.z = delta_theta / delta_t;
 
   pub_odometry_->publish( msg );
 
