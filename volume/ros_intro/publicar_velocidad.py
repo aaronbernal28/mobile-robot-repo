@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 import random
-
+import math
 
 class PublisherVelocity(Node):
 
@@ -17,8 +17,14 @@ class PublisherVelocity(Node):
         msg = Twist()
         
         #Completar con el mensaje a enviar por el nodo "publisher_velocity"
-        msg.linear.x = 0.5 + random.uniform(-0.3, 0.3)
-        msg.angular.z = 0.5 + random.uniform(-0.3, 0.3)
+        #msg.linear.x = 0.5 + random.uniform(-0.3, 0.3)
+        #msg.angular.z = 0.5 + random.uniform(-0.3, 0.3)
+
+        # Movimiento en forma de infinito (lemniscata)
+        t = self.i * 0.1  # Parámetro de tiempo
+        msg.linear.x = 0.5  # Velocidad lineal constante
+        msg.angular.z = 0.8 * math.sin(2 * t)  # Velocidad angular sinusoidal con frecuencia doble
+        self.i += 1
 
         self.publisher_.publish(msg)
         self.get_logger().info(f'Publishing Twist: linear.x={msg.linear.x}, angular.z={msg.angular.z}')
