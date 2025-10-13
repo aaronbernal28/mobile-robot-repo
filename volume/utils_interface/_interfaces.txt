@@ -37,4 +37,5 @@ std_srvs/srv/Empty
 std_srvs/srv/SetBool
 std_srvs/srv/Trigger
 robmovil_msgs/msg/EncoderTicks
-robgraph_msgs/msg/Clock
+rosgraph_msgs/msg/Clock
+nav_msgs/msg/Path

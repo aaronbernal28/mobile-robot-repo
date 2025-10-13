@@ -28,7 +28,7 @@ def generate_launch_description():
             parameters=[
                 {'use_sim_time': True},
                 {'stepping': 0.1},
-                {'trajectory_type': 'sin'},
+                {'trajectory_type': 'sin'}, # sin o spline
                 {'total_time': 50.0},
                 {'amplitude': 1.0},
                 {'cycles': 1.0},
