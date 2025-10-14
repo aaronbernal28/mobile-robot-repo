@@ -13,8 +13,9 @@ double lineal_interp(const rclcpp::Time& t0, const rclcpp::Time& t1, double v0, 
   /** t0 <= t < t1
     * 0 <= t - t0 < t1 - t0
     * 0 <= (t - t0) / (t1 - t0) < 1 */
-  double alpha = (t - t0).seconds() / (t1 - t0).seconds();
-  double v = (1 - alpha) * v0 + alpha * v1;
+  //double alpha = (t - t0).seconds() / (t1 - t0).seconds();
+  //double v = (1 - alpha) * v0 + alpha * v1;
+  double v = v0 + (v1 - v0) * (t - t0).seconds() / (t1 - t0).seconds();
   return v;
 }
 

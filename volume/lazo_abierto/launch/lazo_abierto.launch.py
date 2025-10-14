@@ -1,5 +1,13 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from numpy import pi as M_PI
+M_PI = float(M_PI)
+
+CUADRADO = [0., 0., 0., 0.,
+            15., 5., 0., M_PI / 2.,
+            30., 5., 5., M_PI,
+            45., 0., 5., 3*M_PI / 2.,
+            60., 0., 0., 0.]
 
 def generate_launch_description():
     return LaunchDescription([
@@ -28,17 +36,11 @@ def generate_launch_description():
             parameters=[
                 {'use_sim_time': True},
                 {'stepping': 0.1},
-                {'trajectory_type': 'sin'}, # sin o spline
+                {'trajectory_type': 'spline'}, # sin o spline
                 {'total_time': 50.0},
-                {'amplitude': 1.0},
+                {'amplitude': 1},
                 {'cycles': 1.0},
-                {'spline_waypoints': [
-                    0., 0., 0., 0.,
-                    100., 5., 0., 1.57,
-                    200., 5., 5., 3.14,
-                    300., 0., 5., 4.71,
-                    400., 0., 0., 0.
-                ]}
+                {'spline_waypoints': CUADRADO} # hay que hacer colcon build --packages-select lazo_abierto para guardar los cambios
             ]
         )
     ])

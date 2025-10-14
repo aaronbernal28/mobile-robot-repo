@@ -36,15 +36,17 @@ This repository contains resources from the course `Robótica Móvil` at the Uni
 10. Build and source the workspace:
      ```bash
      colcon build
-     source install/setup.bash
+     source ./install/setup.bash
      ```
+
+11. Start a container
+    ```bash
+    bash start-docker.sh start
+    ```
 
 ## Typical Usage
 
 ```bash
-# Start the container
-bash start-docker.sh start
-
 # Open the container
 bash start-docker.sh open
 

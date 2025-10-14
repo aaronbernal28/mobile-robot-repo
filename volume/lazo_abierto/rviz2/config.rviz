@@ -111,8 +111,6 @@ Visualization Manager:
           Value: true
         Pioneer_p3dx_rightWheel:
           Value: true
-        base_link:
-          Value: true
         base_link_gt:
           Value: true
         map:
@@ -247,7 +245,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -326,5 +324,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 948
-  X: -21
-  Y: 431
+  X: -15
+  Y: 458

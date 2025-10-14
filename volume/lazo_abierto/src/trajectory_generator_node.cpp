@@ -48,8 +48,14 @@ int main(int argc, char** argv)
   } else if (trajectory_type == "spline")
   {
     
-    std::vector<double> spline_waypoints_data = trajectory_generator_node->declare_parameter<std::vector<double>>("spline_waypoints", {});
-    
+    std::vector<double> spline_waypoints_data = trajectory_generator_node->declare_parameter<std::vector<double>>("spline_waypoints", {
+      0., 0., 0., 0.,
+      100., 5., 0., 1.57,
+      200., 5., 5., 3.14,
+      300., 0., 5., 4.71,
+      400., 0., 0., 0.
+    });
+
     if(spline_waypoints_data.size() == 0 || spline_waypoints_data.size() % 4 != 0){
       RCLCPP_ERROR(trajectory_generator_node->get_logger(),"Trajectory waypoints data is not multiple of 4, it expects: time, position_x, position_y, orientation, velocity_x, velocity_y, velocity_orientation");
       return 1;
@@ -188,15 +194,15 @@ void build_spline_trajectory(double stepping, std::vector<std::vector<double>>& 
     // polynomial parameters
 
     /* COMPLETAR LOS PARÁMETROS DE LOS POLINOMIOS */
-    double a0 = 0;
-    double a1 = 0;
-    double a2 = 0;
-    double a3 = 0;
-    double b0 = 0;
-    double b1 = 0;
-    double b2 = 0;
-    double b3 = 0;
-    
+    double a0 = xa;
+    double a1 = n1*std::cos(thetaa);
+    double a2 = 3*(xb-xa)-2*n1*std::cos(thetaa)-n2*std::cos(thetab);
+    double a3 = -2*(xb-xa)+n1*std::cos(thetaa)+n2*std::cos(thetab);
+    double b0 = ya; // la condicion dy/dt = 0? -> esta en el despeje de esto parametros
+    double b1 = n1*std::sin(thetaa);
+    double b2 = 3*(yb-ya)-2*n1*std::sin(thetaa)-n2*std::sin(thetab);
+    double b3 = -2*(yb-ya)+n1*std::sin(thetaa)+n2*std::sin(thetab);
+
     //std::cout << "a0 " << a0 << " a1 " << a1 << " a2 " << a2 << " a3 " << a3 << std::endl;
     //std::cout << "b0 " << b0 << " b1 " << b1 << " b2 " << b2 << " b3 " << b3 << std::endl;
 

@@ -18,7 +18,7 @@ class TrajectoryFollower : public rclcpp::Node
      * @return
      *   false cuando termina de ejecutar la trayectoria, true en caso contrario.
      */
-    virtual bool control(const rclcpp::Time& t, double& v, double& w) = 0;
+    virtual bool control(const rclcpp::Time& t, double& v, double& w) = 0; // Flujo de control
 
     const rclcpp::Time& getInitialTime() const
     { return t0_; }
