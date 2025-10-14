@@ -1,6 +1,7 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from numpy import pi as M_PI
+from spline_waypoints import generate_random_waypoints
 M_PI = float(M_PI)
 
 CUADRADO = [0., 0., 0., 0.,
@@ -8,6 +9,8 @@ CUADRADO = [0., 0., 0., 0.,
             30., 5., 5., M_PI,
             45., 0., 5., 3*M_PI / 2.,
             60., 0., 0., 0.]
+
+RANDOM_WAYPOINTS = generate_random_waypoints(range=10, samples=11, alpha_time=1, seed=28)
 
 def generate_launch_description():
     return LaunchDescription([
