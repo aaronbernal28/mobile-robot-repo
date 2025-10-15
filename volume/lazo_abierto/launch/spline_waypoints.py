@@ -100,5 +100,5 @@ def generate_random_waypoints(range, samples, alpha_time, seed=28):
     return data['spline_waypoints']
 
 if __name__ == "__main__":
-    spline_waypoints = generate_random_waypoints(range=5, samples=10, alpha_time=1)
+    spline_waypoints = generate_random_waypoints(range=5, samples=6, alpha_time=1)
     print(np.array(spline_waypoints).reshape(-1, 4))

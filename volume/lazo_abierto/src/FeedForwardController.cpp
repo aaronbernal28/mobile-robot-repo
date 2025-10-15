@@ -64,7 +64,7 @@ bool FeedForwardController::control(const rclcpp::Time& t, double& v, double& w)
 
   /** COMPLETAR: Evaluar las velocidades lineales y angulares resultantes para publicar
    * como comandos de velocidad. */
-  v = vx; // modificacion por referencia
+  v = sqrt(vx*vx + vy*vy); // modificacion por referencia
   w = va;
 
   return true;
