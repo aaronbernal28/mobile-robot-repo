@@ -16,9 +16,13 @@ void build_spline_trajectory(double, std::vector<std::vector<double>>&, robmovil
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
+  rclcpp::QoS qos_profile(rclcpp::KeepLast(1));
+  qos_profile.reliable();
+  qos_profile.transient_local();
+
   auto trajectory_generator_node = rclcpp::Node::make_shared("trajectory_generator");
 
-  auto trajectory_publisher = trajectory_generator_node->create_publisher<robmovil_msgs::msg::Trajectory>("/robot/trajectory", rclcpp::QoS(10));
+  auto trajectory_publisher = trajectory_generator_node->create_publisher<robmovil_msgs::msg::Trajectory>("/robot/trajectory", qos_profile);
 
   // Path descripto en poses para visualizacion en RViz
   auto path_publisher = trajectory_generator_node->create_publisher<nav_msgs::msg::Path>("/ground_truth/target_path", rclcpp::QoS(10));

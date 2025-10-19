@@ -59,8 +59,8 @@ def generate_random_waypoints(range, samples, alpha_time, seed=28):
         Lista de waypoints en formato [t, x, y, theta] para ser usados en el launch.
     """
     np.random.seed(seed)
-    xs = np.concatenate([[0], np.random.uniform(-range, range, samples)])
-    ys = np.concatenate([[0], np.random.uniform(-range, range, samples)])
+    xs = np.concatenate([[0, 1], np.random.uniform(-range, range, samples)])
+    ys = np.concatenate([[0, 0], np.random.uniform(-range, range, samples)])
     
     data = create_data_model(xs, ys)
     manager = pywrapcp.RoutingIndexManager(
