@@ -73,20 +73,24 @@ bool KinematicPositionController::control(const rclcpp::Time& t, double& v, doub
    *  
    *  RECORDAR: cambiar el marco de referencia en que se encuentran dx, dy y theta */
 
-  double dx = 0;
-  double dy = 0;
-  double theta = 0;
-  
+  double dx = goal_x - current_x;
+  double dy = goal_y - current_y;
+  double theta = goal_a - current_a;
+
   // Computar variables del sistema de control
-  double rho = 0;
-  double alpha = angles::normalize_angle(0); // Normalizes the angle to be -M_PI circle to +M_PI circle It takes and returns radians. 
-  double beta =  angles::normalize_angle(0); // Realizar el calculo dentro del metodo de normalizacion
+  double rho = str::sqrt(dx*dx + dy*dy);
+  double alpha = angles::normalize_angle(str::arc_tan2(dy, dx) - theta); // Normalizes the angle to be -M_PI circle to +M_PI circle It takes and returns radians. 
+  double beta =  angles::normalize_angle(-theta - alpha); // Realizar el calculo dentro del metodo de normalizacion
 
   /* Calcular velocidad lineal y angular* 
    * Existen constantes definidas al comienzo del archivo para
    * K_RHO, K_ALPHA, K_BETA */
-  v = 0;
-  w = 0;
+  assert(K_RHO > 0);
+  assert(K_ALPHA > K_RHO);
+  assert(K_BETA < 0);
+
+  v = K_RHO * rho;
+  w = K_ALPHA * alpha + K_BETA * beta;
   
 
   RCLCPP_INFO(this->get_logger(), "atan2: %.2f, theta siegwart: %.2f, expected_atheta: %.2f, rho: %.2f, alpha: %.2f, beta: %.2f, v: %.2f, w: %.2f",
