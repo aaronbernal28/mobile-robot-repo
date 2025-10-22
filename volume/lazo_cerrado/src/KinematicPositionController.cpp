@@ -52,8 +52,8 @@ void KinematicPositionController::getCurrentPoseFromOdometry(const nav_msgs::msg
  * - K_BETA < 0
  */
 #define K_RHO 0.5
-#define K_ALPHA 1.5
-#define K_BETA -0.2
+#define K_ALPHA 1.3
+#define K_BETA -0.3
 
 
 bool KinematicPositionController::control(const rclcpp::Time& t, double& v, double& w)
@@ -76,20 +76,29 @@ bool KinematicPositionController::control(const rclcpp::Time& t, double& v, doub
 
   double dx = goal_x - current_x;
   double dy = goal_y - current_y;
-  double theta = goal_a - current_a;
+  double theta = current_a - goal_a;
 
   // Computar variables del sistema de control
   double rho = std::sqrt(dx*dx + dy*dy);
   double alpha = angles::normalize_angle(std::atan2(dy, dx) - current_a); // Normalizes the angle to be -M_PI circle to +M_PI circle It takes and returns radians. 
-  double beta =  angles::normalize_angle(- theta - alpha); // Realizar el calculo dentro del metodo de normalizacion
+  double beta =  angles::normalize_angle(-theta - alpha); // Realizar el calculo dentro del metodo de normalizacion
 
   /* Calcular velocidad lineal y angular* 
    * Existen constantes definidas al comienzo del archivo para
    * K_RHO, K_ALPHA, K_BETA */
-
-  v = K_RHO * rho;
-  w = K_ALPHA * alpha + K_BETA * beta;
   
+  if (rho < 0.01) {
+      v = 0;
+      if (alpha > -0.05 && alpha < 0.05) {
+          w = 0;
+      } else {
+          w = K_ALPHA * alpha + K_BETA * beta;
+      }
+  } else {
+      v = K_RHO * rho;
+      w = K_ALPHA * alpha + K_BETA * beta;
+  }
+
 
   RCLCPP_INFO(this->get_logger(), "atan2: %.2f, theta siegwart: %.2f, expected_atheta: %.2f, rho: %.2f, alpha: %.2f, beta: %.2f, v: %.2f, w: %.2f",
             atan2(dy, dx), theta, current_a, rho, alpha, beta, v, w);
