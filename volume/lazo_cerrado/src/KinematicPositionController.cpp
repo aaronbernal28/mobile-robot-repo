@@ -118,31 +118,68 @@ bool KinematicPositionController::getPursuitBasedGoal(const rclcpp::Time& t, dou
   // Los obtienen los valores de la posicion y orientacion actual.
   double current_x, current_y, current_a;
   current_x = this->x; current_y = this->y; current_a = this->a;
-    
+   
   // Se obtiene la trayectoria requerida.
   const robmovil_msgs::msg::Trajectory& trajectory = getTrajectory();
-  
+ 
   /** EJERCICIO 3:
    * Se recomienda encontrar el waypoint de la trayectoria más cercano al robot en términos de x,y
    * y luego buscar el primer waypoint que se encuentre a una distancia predefinida de lookahead en x,y */
-  
-  /* NOTA: De esta manera les es posible recorrer la trayectoria requerida */  
+ 
+  /* NOTA: De esta manera les es posible recorrer la trayectoria requerida */
+  int idx_min_dist = -1;
+  double min_dist =  1e9;
+  double cte_lookahead = 0;
   for(unsigned int i = 0; i < trajectory.points.size(); i++)
   {
     // Recorren cada waypoint definido
     const robmovil_msgs::msg::TrajectoryPoint& wpoint = trajectory.points[i];
-    
+   
     // Y de esta manera puede acceder a la informacion de la posicion y orientacion requerida en el waypoint
     double wpoint_x = wpoint.transform.translation.x;
     double wpoint_y = wpoint.transform.translation.y;
     double wpoint_a = tf2::getYaw(wpoint.transform.rotation);
+    double distancia = dist2(wpoint_x,wpoint_y,current_x,current_y);
     
-    //...
-    
+    // Actualiza la distancia minima
+    if (distancia < min_dist){
+      min_dist = distancia;
+      idx_min_dist = i;
+    }
+   
   }
-  const robmovil_msgs::msg::TrajectoryPoint& last_wpoint = trajectory.points.back(); 
+  int idx_objective = trajectory.points.size()-1;
+
+  // Halla el siguiente punto mas lejano de lookahead
+  for(unsigned int i = idx_min_dist; i < trajectory.points.size(); i++){
+    
+    const robmovil_msgs::msg::TrajectoryPoint& wpoint = trajectory.points[i];
+    double wpoint_x = wpoint.transform.translation.x;
+    double wpoint_y = wpoint.transform.translation.y;
+    
+    // Si la distancia es mayor a lookahead
+    if (dist2(wpoint_x,wpoint_y,current_x,current_y) >= cte_lookahead){
+      idx_objective = i;
+      break;
+    }
+  }
   
-  
+  // Setea 
+  const robmovil_msgs::msg::TrajectoryPoint& last_wpoint = trajectory.points.back();
+  double x_final = last_wpoint.transform.translation.x;
+  double y_final = last_wpoint.transform.translation.y;
+
+  // 
+  if (dist2(x_final,y_final,current_x,current_y) > 0.1){ //idx_objective < trajectory.points.size()
+    const robmovil_msgs::msg::TrajectoryPoint& wpoint = trajectory.points[idx_objective];
+    x = wpoint.transform.translation.x;
+    y = wpoint.transform.translation.y;
+    a = tf2::getYaw(wpoint.transform.rotation);
+  } else {
+    return false;
+  }
+   
+ 
   /* retorna true si es posible definir un goal, false si se termino la trayectoria y no quedan goals. */
   return true;
 }

@@ -34,7 +34,7 @@ def generate_launch_description():
             output="screen",
             parameters=[
                 {'use_sim_time': True},
-                {"goal_selection": "TIME_BASED"}, #FIXED_GOAL, TIME_BASED, PURSUIT_BASED
+                {"goal_selection": "PURSUIT_BASED"}, #FIXED_GOAL, TIME_BASED, PURSUIT_BASED
                 {"fixed_goal_x": float(-2.0)},
                 {"fixed_goal_y": float(1.0)},
                 {"fixed_goal_a": float(-0.570796327*1.2)}#-0.785)}, # -1/2 * PI -0.570796327
@@ -48,11 +48,11 @@ def generate_launch_description():
             output="screen",
             parameters=[
                 {'use_sim_time': True},
-                {'trajectory_type': 'spline'}, #sin or spline
+                {'trajectory_type': 'sin'}, #sin or spline
                 {"stepping": float(0.1)},
-                {"total_time": float(5.0)},
+                {"total_time": float(3.0)},
                 {"amplitude": float(1.0)},
-                {"cycles": float(1.0)},
+                {"cycles": float(2.0)},
                 {'spline_waypoints': FLOWER}
             ],  
         ),

@@ -40,3 +40,4 @@ robmovil_msgs/msg/EncoderTicks
 rosgraph_msgs/msg/Clock
 nav_msgs/msg/Path
 geometry_msgs/msg/PoseStamped
+sensor msgs/msg/Imu
