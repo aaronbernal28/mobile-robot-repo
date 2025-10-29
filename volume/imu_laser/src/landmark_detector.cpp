@@ -52,9 +52,17 @@ void robmovil_ekf::LandmarkDetector::on_laser_scan(const sensor_msgs::msg::Laser
     float angle_min = msg->angle_min;
     float angle_increment = msg->angle_increment;
 
+    if (range < range_min || range > range_max){
+      continue; // descarto esta medicion
+    }
+
     /* COMPLETAR: p debe definirse con informacion valida y 
      * en coordenadas cartesianas */
-    tf2::Vector3 p(0,0,0);
+    float angle = angle_min + i * angle_increment;
+    float x = range * cos(angle);
+    float y = range * sin(angle);
+    float z = 0.0;
+    tf2::Vector3 p(x,y,z);
     
     /* convierto el punto en relacion al marco de referencia del laser al marco del robot */
     p = laser_transform * p;
@@ -77,7 +85,17 @@ void robmovil_ekf::LandmarkDetector::on_laser_scan(const sensor_msgs::msg::Laser
   {
     
     /* COMPLETAR: Acumular, de manera secuencial, mediciones cercanas (distancia euclidea) */
-    
+    if (!landmark_points.empty())
+    {
+      tf2::Vector3 last_point = landmark_points.back();
+      tf2::Vector3 current_point = cartesian[i];
+      double distance = (current_point - last_point).length();
+      if (distance <= LANDMARK_DIAMETER)
+      {
+        landmark_points.push_back(current_point);
+        continue; // sigo acumulando puntos cercanos
+      }
+    }
     // -------
     
     /* Al terminarse las mediciones provenientes al landmark que se venia detectando,
@@ -88,6 +106,11 @@ void robmovil_ekf::LandmarkDetector::on_laser_scan(const sensor_msgs::msg::Laser
     tf2::Vector3 centroid(0,0,0);
 
     /* COMPLETAR: calcular el centroide de los puntos acumulados */
+    for (const auto& point : landmark_points)
+    {
+      centroid += point;
+    }
+    centroid /= landmark_points.size();
 
     RCLCPP_INFO(this->get_logger(), "landmark detectado (cartesianas): %f %f %f", centroid.getX(), centroid.getY(), centroid.getZ());
     centroids.push_back(centroid);
@@ -95,10 +118,10 @@ void robmovil_ekf::LandmarkDetector::on_laser_scan(const sensor_msgs::msg::Laser
     /* Convertir el centroide a coordenadas polares, construyendo el mensaje requerido */
     robmovil_msgs::msg::Landmark landmark;
     
-    float r = 0; // distancia desde el robot al centroide
+    float r = std::sqrt(centroid.getX()*centroid.getX() + centroid.getY()*centroid.getY()); // distancia desde el robot al centroide
     landmark.range = r;
     
-    float a = 0; // angulo de la recta que conecta al robot con el centroide
+    float a = std::atan2(centroid.getY(), centroid.getX()); // angulo de la recta que conecta al robot con el centroide
     landmark.bearing = a;
 
     /* Fin Completar */

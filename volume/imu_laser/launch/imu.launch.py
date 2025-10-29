@@ -10,6 +10,13 @@ def generate_launch_description():
             name="imu_calibrator",
             output="screen",
             parameters=[{"use_sim_time": True},
-                        {"calibrate": 0}]
+                        {"calibrate": 10}]
         ),
     ])
+"""
+ros2 launch imu_laser imu.launch.py
+
+ros2 topic pub /robot/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, 
+     angular: {x: 0.0, y: 0.0, z: -0.1}}"
+
+"""
