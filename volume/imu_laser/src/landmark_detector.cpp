@@ -46,23 +46,18 @@ void robmovil_ekf::LandmarkDetector::on_laser_scan(const sensor_msgs::msg::Laser
   {
     /* Utilizar la informacion del mensaje para filtrar y convertir */
     float range = msg->ranges[i];
-    float range_min = msg->range_min;
+    float range_min = msg->range_min+0.005;
     float range_max = msg->range_max;
     
     float angle_min = msg->angle_min;
     float angle_increment = msg->angle_increment;
 
-    if (range < range_min || range > range_max){
-      continue; // descarto esta medicion
-    }
-
     /* COMPLETAR: p debe definirse con informacion valida y 
      * en coordenadas cartesianas */
+    if (std::isinf(range)  || range < range_min || range > range_max) //solo seguir si es valido
+      continue;
     float angle = angle_min + i * angle_increment;
-    float x = range * cos(angle);
-    float y = range * sin(angle);
-    float z = 0.0;
-    tf2::Vector3 p(x,y,z);
+    tf2::Vector3 p(range * cos(angle), range * sin(angle), 0.0);
     
     /* convierto el punto en relacion al marco de referencia del laser al marco del robot */
     p = laser_transform * p;
@@ -85,53 +80,76 @@ void robmovil_ekf::LandmarkDetector::on_laser_scan(const sensor_msgs::msg::Laser
   {
     
     /* COMPLETAR: Acumular, de manera secuencial, mediciones cercanas (distancia euclidea) */
-    if (!landmark_points.empty())
-    {
-      tf2::Vector3 last_point = landmark_points.back();
-      tf2::Vector3 current_point = cartesian[i];
-      double distance = (current_point - last_point).length();
-      if (distance <= LANDMARK_DIAMETER)
-      {
-        landmark_points.push_back(current_point);
-        continue; // sigo acumulando puntos cercanos
-      }
-    }
+    
     // -------
     
     /* Al terminarse las mediciones provenientes al landmark que se venia detectando,
      * se calcula la pose del landmark como el centroide de las mediciones */
 
-    RCLCPP_INFO(this->get_logger(), "landmark con %zu puntos", landmark_points.size());
-    
-    tf2::Vector3 centroid(0,0,0);
+    if (landmark_points.empty()) { //si esta vacio empiezo un nuevo cluster
+          landmark_points.push_back(cartesian[i]);
+    } else {
+      tf2::Vector3 last_point = landmark_points.back();
+      double dist = (cartesian[i] - last_point).length();
+      if (dist < LANDMARK_DIAMETER) { //si esta cerca lo agrego, si no calculo el centroide
+        landmark_points.push_back(cartesian[i]);
+      } else {
+        RCLCPP_INFO(this->get_logger(), "landmark con %zu puntos", landmark_points.size());
+        tf2::Vector3 centroid(0,0,0);
+        for (auto &p : landmark_points) //sumo todos los elementos y los divido por n
+          centroid += p;
+        centroid /= landmark_points.size();
 
-    /* COMPLETAR: calcular el centroide de los puntos acumulados */
-    for (const auto& point : landmark_points)
-    {
-      centroid += point;
+        robmovil_msgs::msg::Landmark landmark;
+
+        float a = atan2(centroid.getY(), centroid.getX()); //
+        landmark.bearing = a; //
+
+        centroid.setX(centroid.getX() + LANDMARK_DIAMETER / 2.0 * cos(a));
+        centroid.setY(centroid.getY() + LANDMARK_DIAMETER / 2.0 * sin(a));
+
+
+        RCLCPP_INFO(this->get_logger(), "landmark detectado (cartesianas): %f %f %f", centroid.getX(), centroid.getY(), centroid.getZ());
+        centroids.push_back(centroid);
+
+        
+        float r = sqrt(centroid.getX()*centroid.getX() + centroid.getY()*centroid.getY());
+   
+        landmark.range = r;
+
+
+        landmark_array.landmarks.push_back(landmark);
+        RCLCPP_INFO(this->get_logger(), "landmark detectado (polares):  %u: %f %f ", i, landmark.range, landmark.bearing);
+
+        landmark_points.clear();
+        landmark_points.push_back(cartesian[i]);
+      }
     }
+  }
+if (!landmark_points.empty()) {
+    tf2::Vector3 centroid(0,0,0);
+    for (auto &p : landmark_points)
+      centroid += p;
     centroid /= landmark_points.size();
 
+    robmovil_msgs::msg::Landmark landmark;
+
+    float a = atan2(centroid.getY(), centroid.getX());
+    landmark.bearing = a;
+
+    centroid.setX(centroid.getX() + LANDMARK_DIAMETER / 2.0 * cos(a));
+    centroid.setY(centroid.getY() + LANDMARK_DIAMETER / 2.0 * sin(a));
     RCLCPP_INFO(this->get_logger(), "landmark detectado (cartesianas): %f %f %f", centroid.getX(), centroid.getY(), centroid.getZ());
     centroids.push_back(centroid);
 
-    /* Convertir el centroide a coordenadas polares, construyendo el mensaje requerido */
-    robmovil_msgs::msg::Landmark landmark;
-    
-    float r = std::sqrt(centroid.getX()*centroid.getX() + centroid.getY()*centroid.getY()); // distancia desde el robot al centroide
+
+    float r = sqrt(centroid.getX()*centroid.getX() + centroid.getY()*centroid.getY());
+
     landmark.range = r;
+
     
-    float a = std::atan2(centroid.getY(), centroid.getX()); // angulo de la recta que conecta al robot con el centroide
-    landmark.bearing = a;
-
-    /* Fin Completar */
-
-    /* se agrega el landmark en coordenadas polares */
     landmark_array.landmarks.push_back(landmark);
-    RCLCPP_INFO(this->get_logger(), "landmark detectado (polares):  %u: %f %f ", i, landmark.range, landmark.bearing);
-
-    /* empiezo a procesar un nuevo landmark */
-    landmark_points.clear();
+    RCLCPP_INFO(this->get_logger(), "landmark detectado (polares final): %f %f ", landmark.range, landmark.bearing);
   }
 
   /* Publicamos el mensaje de los landmarks encontrados */
