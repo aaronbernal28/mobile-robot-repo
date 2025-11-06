@@ -60,3 +60,30 @@ source install/setup.bash
 ## Extra
 Open vscode within the container:
 `code --no-sandbox --user-data-dir=/path/to/some/directory .`
+
+## ROS2 Commands (inside container)
+
+### Execute ROS2 packages
+```bash
+ros2 run <NODE> <PACKAGE>
+```
+
+### List available topics
+```bash
+ros2 topic list
+```
+
+### Publish to a topic
+```bash
+ros2 topic pub <TOPIC> <MSG_TYPE> <MESSAGE>
+```
+
+### Open CoppeliaSim simulator
+```bash
+coppeliaSim.sh
+```
+
+### Open RViz2 visualizer
+```bash
+rviz2
+```
