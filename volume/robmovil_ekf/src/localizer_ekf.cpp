@@ -92,28 +92,27 @@ void robmovil_ekf::LocalizerEKF::makeBaseA(void)
 void robmovil_ekf::LocalizerEKF::makeA(void)
 {
   /* COMPLETAR: Utilizando variables globales x, u y delta_t */
-  
-  A(1,3) = 0;
-  A(2,3) = 0;
+  double v = u(1);
+  A(1,3) = -v * delta_t * sin(x(3));
+  A(2,3) =  v * delta_t * cos(x(3));
 
   RCLCPP_INFO(rclcpp::get_logger("robmovil_ekf"), "A: %d", A);
 }
-
 
 /** Jacobiano de W respecto de f */
 void robmovil_ekf::LocalizerEKF::makeBaseW(void)
 {
   /* COMPLETAR: Con las derivadas del modelo de movimiento (o proceso) con respecto al ruido ADITIVO w */
   
-  W(1,1) = 0;
+  W(1,1) = 1;
   W(1,2) = 0;
   W(1,3) = 0;
   W(2,1) = 0;
-  W(2,2) = 0;
+  W(2,2) = 1;
   W(2,3) = 0;
   W(3,1) = 0;
   W(3,2) = 0;
-  W(3,3) = 0;
+  W(3,3) = 1;
 
 
 }
@@ -168,10 +167,12 @@ void robmovil_ekf::LocalizerEKF::makeH(void)
     
     /* COMPLETAR: Calcular H en base al landmark del mapa relativo al robot */
     
-    H(1,1) = 0;
-    H(1,2) = 0;
-    H(2,1) = 0;
-    H(2,2) = 0;
+    float dist_ = sqrt(diff_robot_landmark.length2());
+
+    H(1,1) = -diff_robot_landmark.getX() / dist_;
+    H(1,2) = -diff_robot_landmark.getY() / dist_;
+    H(2,1) = -H(1,2);
+    H(2,2) = H(1,1);
 
   }
 
@@ -182,11 +183,11 @@ void robmovil_ekf::LocalizerEKF::makeH(void)
 void robmovil_ekf::LocalizerEKF::makeBaseV(void)
 {
   /* COMPLETAR: Con las derivadas del modelo de sensado con respecto al ruido ADITIVO v */
-  
-  V(1,1) = 0;
+  // dh/dv
+  V(1,1) = 1;
   V(1,2) = 0;
   V(2,1) = 0;
-  V(2,2) = 0;
+  V(2,2) = 1;
   
   RCLCPP_INFO(rclcpp::get_logger("robmovil_ekf"), "V: %d", V);
 }
@@ -214,10 +215,9 @@ void robmovil_ekf::LocalizerEKF::makeProcess(void)
    * Guardar el resultado en la variable global x */
    LocalizerEKF::Vector x_old(x); // X_t-1
    
-  x(1) = 0;
-  x(2) = 0;
-  x(3) = angles::normalize_angle(0);
-   
+  x(1) = x_old(1) + u(1) * delta_t * cos(x_old(3));
+  x(2) = x_old(2) + u(1) * delta_t * sin(x_old(3));
+  x(3) = angles::normalize_angle(x_old(3) + u(2) * delta_t);
 
   RCLCPP_INFO(rclcpp::get_logger("robmovil_ekf"), "Process model: X_t-1: %d, X_t: %d, delta_t: %d", x_old, x, delta_t);
 }
@@ -251,10 +251,15 @@ bool robmovil_ekf::LocalizerEKF::find_corresponding_landmark(const tf2::Vector3&
    
   for (int i = 0; i < map_landmarks.size(); i++)
   {
-    /* COMPLETAR */
-    corresponding_landmark = map_landmarks[i];
-    found = false;
-    
+    // Si el landmark del mapa esta dentro del radio delta_radio
+    // y es el mas cercano hasta el momento, actualizar la referencia
+    float current_distance = sqrt((map_landmarks[i] - measured_landmark).length2());
+    if (current_distance < delta_radio && current_distance < min_distance)
+    {
+      min_distance = current_distance;
+      corresponding_landmark = map_landmarks[i];
+      found = true;
+    }
   }
 
   return found;
