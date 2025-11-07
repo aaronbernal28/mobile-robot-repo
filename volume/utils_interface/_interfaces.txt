@@ -41,5 +41,3 @@ rosgraph_msgs/msg/Clock
 nav_msgs/msg/Path
 geometry_msgs/msg/PoseStamped
 sensor_msgs/msg/Imu
-robmovil_msgs/msg/Landmkark
-robmovil_msgs/msg/LandmkarkArray
