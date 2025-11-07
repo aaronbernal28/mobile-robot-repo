@@ -62,7 +62,7 @@ def generate_launch_description():
             name='localizer',
             output='screen',
             parameters=[{'only_prediction': False}, ## True para el ejercicio 1
-                        {'min_landmark_size': 2},
+                        {'min_landmark_size': 1},
                         {"use_sim_time": True}],
         ),
     ])
@@ -81,8 +81,5 @@ ros2 topic pub /robot/cmd_vel geometry_msgs/msg/Twist
     "{linear: {x: 1.0, y: 0.0, z: 0.0}, 
      angular: {x: 0.0, y: 0.0, z: 0.0}}"
 
-ros2 topic pub /robot/left_wheel/cmd_vel std_msgs/msg/Float64 "{data: 1.0}"
-
-ros2 topic pub /robot/right_wheel/cmd_vel std_msgs/msg/Float64 "{data: 1.0}"
-
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
 '''
