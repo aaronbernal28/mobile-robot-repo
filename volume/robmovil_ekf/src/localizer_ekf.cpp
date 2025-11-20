@@ -167,13 +167,12 @@ void robmovil_ekf::LocalizerEKF::makeH(void)
     
     /* COMPLETAR: Calcular H en base al landmark del mapa relativo al robot */
     
-    float dist_ = sqrt(diff_robot_landmark.length2());
+    float dist2_ = diff_robot_landmark.length2();
 
-    H(1,1) = -diff_robot_landmark.getX() / dist_;
-    H(1,2) = -diff_robot_landmark.getY() / dist_;
-    H(2,1) = -H(1,2);
-    H(2,2) = H(1,1);
-
+    H(1,1) = -diff_robot_landmark.getX() / std::sqrt(dist2_);
+    H(1,2) = -diff_robot_landmark.getY() / std::sqrt(dist2_);
+    H(2,1) = diff_robot_landmark.getY() / dist2_;
+    H(2,2) = -diff_robot_landmark.getX() / dist2_;
   }
 
   RCLCPP_INFO(rclcpp::get_logger("robmovil_ekf"), "H: %d", H);

@@ -62,7 +62,7 @@ def generate_launch_description():
             name='localizer',
             output='screen',
             parameters=[{'only_prediction': False}, ## True para el ejercicio 1
-                        {'min_landmark_size': 1},
+                        {'min_landmark_size': 2},
                         {"use_sim_time": True}],
         ),
     ])
