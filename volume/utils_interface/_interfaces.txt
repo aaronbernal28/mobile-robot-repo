@@ -41,3 +41,5 @@ rosgraph_msgs/msg/Clock
 nav_msgs/msg/Path
 geometry_msgs/msg/PoseStamped
 sensor_msgs/msg/Imu
+nav_msgs/msg/MapMetaData
+nav_msgs/msg/OccupancyGrid
