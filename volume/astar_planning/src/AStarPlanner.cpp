@@ -17,10 +17,33 @@ std::vector<robmovil_planning::AStarPlanner::Cell> robmovil_planning::AStarPlann
   /* COMPLETAR: Calcular un vector de vecinos (distintos de c).
    * IMPORTANTE: Tener en cuenta los limites de la grilla (utilizar grid_->info.width y grid_->info.heigh)
    *             y aquellas celdas ocupadas */
-  
-   std::vector<Cell> neighbors;
+   
+  uint i = c.i;
+  uint j = c.j;
+  std::vector<std::pair<int, int>> posiblesVecinos = {
+      {-1, 0}, {1, 0}, {0, -1}, {0, 1},   // cardinales (N, S, E, O)
+      {-1, -1}, {-1, 1}, {1, -1}, {1, 1}  //diagonales (NE, SE, SW, NW)
+    };
+  std::vector<Cell> neighbors;
+  for (const auto& posiblesVecino : posiblesVecinos)
+  {
+    int ni = i+posiblesVecino.first;
+    int nj = j+posiblesVecino.second;
+    double x;
+    double y;
 
-   /* ... */
+    if(!getCenterOfCell (ni , nj , x , y)){ //devuelve !false si esta fuera de rango 
+      continue;
+    }
+
+    if(isANeighborCellOccupy(ni , nj)){ //devuelve true si esta ocupada 
+      continue;
+    }
+    Cell neighbor;
+    neighbor.i = ni;
+    neighbor.j = nj;
+    neighbors.push_back(neighbor);
+  }
 
   return neighbors;
 }
@@ -29,9 +52,10 @@ double robmovil_planning::AStarPlanner::heuristic_cost(const Cell& start, const 
 {  
   /* COMPLETAR: Funcion de heuristica de costo */
 
-  double heuristic = 0.0;
-
-  /* ... */
+  double dx = std::abs(static_cast<double>(current.i) - static_cast<double>(goal.i));
+  double dy = std::abs(static_cast<double>(current.j) - static_cast<double>(goal.j));
+  
+  double heuristic = (dx + dy) * COST_BETWEEN_CELLS;
 
   return heuristic;
 }
@@ -52,6 +76,7 @@ bool robmovil_planning::AStarPlanner::do_planning(robmovil_msgs::msg::Trajectory
   std::priority_queue<CellWithPriority, std::vector<CellWithPriority>, PriorityCompare> frontier;
   std::map<Cell, Cell> came_from;
   std::map<Cell, double> cost_so_far;
+  std::map<Cell, bool> closed_set;
   
   bool path_found = false;
   
@@ -63,9 +88,46 @@ bool robmovil_planning::AStarPlanner::do_planning(robmovil_msgs::msg::Trajectory
    * NOTA: Pueden utilizar las funciones neighbors(const Cell& c) y heuristic_cost(const Cell& start, const Cell& goal, const Cell& current)
    *       para la resolucion */
   
-  
-  /* ... */
+  while (!frontier.empty()) {
 
+    Cell current = frontier.top(); // current = vertex in OPEN with min f[]
+    frontier.pop(); // remove current from OPEN
+
+    // Line 12: if current == goal then return
+    if (current == goal) {
+      path_found = true;
+      break;
+    }
+
+    // Line 16: agregar current a CLOSED
+    closed_set[current] = true;
+    
+    // Line 17: recorrer los vecinos de current
+    for (const Cell& neighbor : neighbors(current)) {
+      
+      // Line 18: if neighbor in CLOSED then skip iteration
+      if (closed_set[neighbor]) {
+        continue;
+      }
+
+      // Line 21: cost = g[current] + movement_cost(current, neighbor)
+      double cost = cost_so_far[current] + COST_BETWEEN_CELLS;
+
+      // Line 22: neighbor not OPEN
+      if (cost_so_far.find(neighbor) == cost_so_far.end()) {
+        // add neighbor to OPEN
+        frontier.push(CellWithPriority(neighbor, cost + heuristic_cost(start, goal, neighbor)));
+      } else if (cost >= cost_so_far[neighbor]) {
+        continue; // Este no es un mejor camino
+      }
+        
+        // Line 27: prev[neighbor] = current
+        came_from[neighbor] = current;
+        
+        // Line 28: g[neighbor] = cost
+        cost_so_far[neighbor] = cost;
+      }
+    }
 
   if(not path_found)
     return false;
