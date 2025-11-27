@@ -8,15 +8,7 @@ double lineal_interp(const rclcpp::Time& t0, const rclcpp::Time& t1, double v0, 
   /** COMPLETAR: esta funcion debe interpolar entre las velocidades requeridas.
    * entre v0 y v1 dependiendo el tiempo trancurrido entre ambos
    * considerar que t siempre se encuentra en t0 y t1. */
-  assert(t0 <= t);
-  assert(t < t1);
-  /** t0 <= t < t1
-    * 0 <= t - t0 < t1 - t0
-    * 0 <= (t - t0) / (t1 - t0) < 1 */
-  //double alpha = (t - t0).seconds() / (t1 - t0).seconds();
-  //double v = (1 - alpha) * v0 + alpha * v1;
-  double v = v0 + (v1 - v0) * (t - t0).seconds() / (t1 - t0).seconds();
-  return v;
+  return ((v1-v0)*(t-t0).seconds()/(t1-t0).seconds())+v0;
 }
 
 bool FeedForwardController::control(const rclcpp::Time& t, double& v, double& w)
@@ -64,8 +56,8 @@ bool FeedForwardController::control(const rclcpp::Time& t, double& v, double& w)
 
   /** COMPLETAR: Evaluar las velocidades lineales y angulares resultantes para publicar
    * como comandos de velocidad. */
-  v = sqrt(vx*vx + vy*vy); // modificacion por referencia
+  v = sqrt(vx*vx+vy*vy);
   w = va;
-
+    
   return true;
 }

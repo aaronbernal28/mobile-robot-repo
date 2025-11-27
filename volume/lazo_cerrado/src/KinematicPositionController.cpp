@@ -51,10 +51,10 @@ void KinematicPositionController::getCurrentPoseFromOdometry(const nav_msgs::msg
  * - K_RHO < K_ALPHA
  * - K_BETA < 0
  */
-#define K_RHO 0.5
-#define K_ALPHA 1.3
-#define K_BETA -0.3
-
+#define K_RHO 0.5 //1 original, 1) 0.5
+#define K_ALPHA 1 //1.5 original, 1) 1
+#define K_BETA -0.2// -0.5 original y 1),
+#define K_THETA 40
 
 bool KinematicPositionController::control(const rclcpp::Time& t, double& v, double& w)
 {
@@ -70,36 +70,40 @@ bool KinematicPositionController::control(const rclcpp::Time& t, double& v, doub
 
   /** EJERCICIO 1: COMPLETAR: Aqui deberan realizar las cuentas necesarias para determinar:
    *             - la velocidad lineal: asignando la variable v
-   *             - la velocidad angular: asignando la variable w 
+   *             - la velocidad angular: asignando la variable w
    *  
    *  RECORDAR: cambiar el marco de referencia en que se encuentran dx, dy y theta */
 
-  double dx = goal_x - current_x;
-  double dy = goal_y - current_y;
+  // Diferencias en el marco global
+  double dx_global = goal_x - current_x;
+  double dy_global = goal_y - current_y;
+ 
+  double dx = cos(current_a) * dx_global + sin(current_a) * dy_global;
+  double dy = -sin(current_a) * dx_global + cos(current_a) * dy_global;
   double theta = current_a - goal_a;
-
+ 
   // Computar variables del sistema de control
-  double rho = std::sqrt(dx*dx + dy*dy);
-  double alpha = angles::normalize_angle(std::atan2(dy, dx) - current_a); // Normalizes the angle to be -M_PI circle to +M_PI circle It takes and returns radians. 
-  double beta =  angles::normalize_angle(-theta - alpha); // Realizar el calculo dentro del metodo de normalizacion
+  double rho = sqrt(dx * dx + dy * dy);
+  double alpha = angles::normalize_angle(atan2(dy, dx));
+  double beta = angles::normalize_angle(- theta - alpha);
 
-  /* Calcular velocidad lineal y angular* 
+  /* Calcular velocidad lineal y angular*
    * Existen constantes definidas al comienzo del archivo para
    * K_RHO, K_ALPHA, K_BETA */
-  
-  if (rho < 0.01) {
-      v = 0;
-      if (alpha > -0.05 && alpha < 0.05) {
-          w = 0;
-      } else {
-          w = K_ALPHA * alpha + K_BETA * beta;
-      }
+  double minmovr = 0.001;
+  double minmovt = 0.01;
+  if (rho < minmovr){
+    v = 0;
+    if (abs(theta) < minmovt)
+      w = 0;
+    else {
+      w = (K_THETA * abs(theta))*(K_ALPHA * alpha + K_BETA * beta);
+    }
   } else {
-      v = K_RHO * rho;
-      w = K_ALPHA * alpha + K_BETA * beta;
+
+    v = K_RHO * rho;
+    w = K_ALPHA * alpha + K_BETA * beta;
   }
-
-
   RCLCPP_INFO(this->get_logger(), "atan2: %.2f, theta siegwart: %.2f, expected_atheta: %.2f, rho: %.2f, alpha: %.2f, beta: %.2f, v: %.2f, w: %.2f",
             atan2(dy, dx), theta, current_a, rho, alpha, beta, v, w);
 
@@ -118,59 +122,51 @@ bool KinematicPositionController::getPursuitBasedGoal(const rclcpp::Time& t, dou
   // Los obtienen los valores de la posicion y orientacion actual.
   double current_x, current_y, current_a;
   current_x = this->x; current_y = this->y; current_a = this->a;
-   
+    
   // Se obtiene la trayectoria requerida.
   const robmovil_msgs::msg::Trajectory& trajectory = getTrajectory();
- 
+  
   /** EJERCICIO 3:
    * Se recomienda encontrar el waypoint de la trayectoria más cercano al robot en términos de x,y
    * y luego buscar el primer waypoint que se encuentre a una distancia predefinida de lookahead en x,y */
- 
-  /* NOTA: De esta manera les es posible recorrer la trayectoria requerida */
+  
+  /* NOTA: De esta manera les es posible recorrer la trayectoria requerida */ 
   int idx_min_dist = -1;
   double min_dist =  1e9;
-  double cte_lookahead = 0;
+  double cte_lookahead = 1.5;
   for(unsigned int i = 0; i < trajectory.points.size(); i++)
   {
     // Recorren cada waypoint definido
     const robmovil_msgs::msg::TrajectoryPoint& wpoint = trajectory.points[i];
-   
+    
     // Y de esta manera puede acceder a la informacion de la posicion y orientacion requerida en el waypoint
     double wpoint_x = wpoint.transform.translation.x;
     double wpoint_y = wpoint.transform.translation.y;
     double wpoint_a = tf2::getYaw(wpoint.transform.rotation);
     double distancia = dist2(wpoint_x,wpoint_y,current_x,current_y);
-    
-    // Actualiza la distancia minima
+    //...
     if (distancia < min_dist){
       min_dist = distancia;
       idx_min_dist = i;
     }
-   
-  }
-  int idx_objective = trajectory.points.size()-1;
-
-  // Halla el siguiente punto mas lejano de lookahead
-  for(unsigned int i = idx_min_dist; i < trajectory.points.size(); i++){
     
+  }
+  int idx_objective = idx_min_dist;
+  for(unsigned int i = idx_min_dist; i < trajectory.points.size(); i++){
     const robmovil_msgs::msg::TrajectoryPoint& wpoint = trajectory.points[i];
+
     double wpoint_x = wpoint.transform.translation.x;
     double wpoint_y = wpoint.transform.translation.y;
-    
-    // Si la distancia es mayor a lookahead
+
     if (dist2(wpoint_x,wpoint_y,current_x,current_y) >= cte_lookahead){
       idx_objective = i;
       break;
     }
   }
   
-  // Setea 
-  const robmovil_msgs::msg::TrajectoryPoint& last_wpoint = trajectory.points.back();
-  double x_final = last_wpoint.transform.translation.x;
-  double y_final = last_wpoint.transform.translation.y;
-
-  // 
-  if (dist2(x_final,y_final,current_x,current_y) > 0.1){ //idx_objective < trajectory.points.size()
+  //const robmovil_msgs::msg::TrajectoryPoint& last_wpoint = trajectory.points.back();
+  
+  if (idx_objective < trajectory.points.size()){
     const robmovil_msgs::msg::TrajectoryPoint& wpoint = trajectory.points[idx_objective];
     x = wpoint.transform.translation.x;
     y = wpoint.transform.translation.y;
@@ -178,8 +174,8 @@ bool KinematicPositionController::getPursuitBasedGoal(const rclcpp::Time& t, dou
   } else {
     return false;
   }
-   
- 
+    
+  
   /* retorna true si es posible definir un goal, false si se termino la trayectoria y no quedan goals. */
   return true;
 }
